@@ -7,6 +7,7 @@
 
 # Using the rpm URL format of the yum module causes Ansible to download the rpm
 # every time to check whether it's installed, so, don't do that.
+#### "https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 - name: Check pgdg repository package (RedHat)
   yum:
     name: "pgdg-redhat-repo"
@@ -14,16 +15,30 @@
   ignore_errors: yes
 
 - name: Install pgdg repository package (RedHat)
-  yum:
-    name: >-
-      https://download.postgresql.org/pub/repos/yum/reporpms/{{ postgresql_pgdg_shortfamilies[ansible_distribution]
+
+#  yum:
+#    name: >-
+#      https://download.postgresql.org/pub/repos/yum/reporpms/{{ postgresql_pgdg_shortfamilies[ansible_distribution]
+#        | default("EL") }}-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}/pgdg-{{
+#        postgresql_pgdg_families[ansible_distribution] | default("redhat") }}-repo-latest.noarch.rpm
+#  register: __postgresql_yum_result
+#  until: __postgresql_yum_result is succeeded
+#  retries: 5
+#  delay: 5
+#  when: __postgresql_repo_pkg_installed_result is failed
+
+#  - name: read all text files in $HOME with the /bin/bash shell
+  shell: rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/{{ postgresql_pgdg_shortfamilies[ansible_distribution]
         | default("EL") }}-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}/pgdg-{{
         postgresql_pgdg_families[ansible_distribution] | default("redhat") }}-repo-latest.noarch.rpm
-  register: __postgresql_yum_result
-  until: __postgresql_yum_result is succeeded
-  retries: 5
-  delay: 5
-  when: __postgresql_repo_pkg_installed_result is failed
+
+#rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: root
+  ignore_errors: yes
+                      
 
 #- name: Collect installed repos
 #  yum:
@@ -44,7 +59,8 @@
 
 - name: Install PostgreSQL (RedHat)
   yum:
-    name: postgresql{{ __postgresql_version_dotless }}-server
+#    name: postgresql{{ __postgresql_version_dotless }}-server
+    name: postgresql-server
 
 - name: Check for pgdata directory
   stat:
@@ -61,9 +77,10 @@
       and (pgdata_stat.stat.isdir is not defined or not pgdata_stat.stat.isdir)
 
 - name: Initialize database (RedHat >= 7)
-  command: >-
-    /usr/pgsql-{{ postgresql_version }}/bin/postgresql{{ __postgresql_command_sep }}{{
-      __postgresql_version_dotless }}-setup initdb
+  command: /usr/bin/postgresql-setup initdb
+#    /usr/pgsql-{{ postgresql_version }}/bin/postgresql{{ __postgresql_command_sep }}{{
+#      __postgresql_version_dotless }}-setup initdb
+
   when: >-
     ansible_distribution_major_version is version(7, '>=')
       and (pgdata_stat.stat.isdir is not defined or not pgdata_stat.stat.isdir)

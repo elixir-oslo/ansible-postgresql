@@ -95,3 +95,13 @@
     name: "{{ postgresql_service_name }}"
     enabled: yes
     state: started
+
+#- name: Make /etc conf simlink
+#  command: ln -s "{{ postgresql_conf_dir }}" /etc/postgresql
+  
+- name: Create /etc/PG sym link
+  file:
+        src: "{{ postgresql_conf_dir }}"
+        dest: "/etc/postgresql"
+        state: link
+        
